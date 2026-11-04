@@ -1,6 +1,6 @@
 {
   "name": "@vfvrpq/dsh-file-explorer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "VS Code style folder and file explorer for DeepSeek Harness: a sidebar rail icon that opens a workspace file tree with text, Markdown and image preview.",
   "type": "module",
   "license": "MIT",

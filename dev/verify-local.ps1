@@ -4,8 +4,9 @@
 # this package into it, boots a headless web server, runs the Playwright checks,
 # then tears the profile down. The desktop profile is never touched.
 #
-#   pwsh -File dev\verify-local.ps1
-#   pwsh -File dev\verify-local.ps1 -KeepProfile   # keep the profile for poking
+#   powershell -NoProfile -File dev\verify-local.ps1
+#   powershell -NoProfile -File dev\verify-local.ps1 -KeepProfile   # keep the profile
+#   powershell -NoProfile -File dev\verify-local.ps1 -PackageDir <installed-copy>
 #
 param(
     [string]$Profile = "fe-verify",
@@ -37,9 +38,9 @@ Copy-Item (Join-Path $source "lib") -Destination (Join-Path $installed "lib") -R
 Copy-Item (Join-Path $source "package.json"), (Join-Path $source "cordis.patch.yml") -Destination $installed
 
 # The profile must list the package so the client-bundle scan sees `dsh.client`,
-# and as a bundle so its own cordis.patch.yml supplies the insert row 鈥?exactly
-# what `dsh plugin --profile <p> add <pkg>` does. Written without a BOM: the
-# loader parses this file as JSON.
+# and as a bundle so its own cordis.patch.yml supplies the insert row. That is
+# exactly what `dsh plugin --profile <p> add <pkg>` does. Written without a BOM:
+# the loader parses this file as JSON.
 $manifestPath = Join-Path $profileDir "package.json"
 $profileManifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
 $profileManifest.dependencies | Add-Member -NotePropertyName $packageName -NotePropertyValue $packageVersion -Force
@@ -48,6 +49,19 @@ if ($bundles -notcontains $packageName) {
     $profileManifest.dsh.profile.bundles = @($bundles + $packageName)
 }
 [IO.File]::WriteAllText($manifestPath, ($profileManifest | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding($false)))
+
+# The suite drives the in-panel preview first and then the explicit "open on the
+# right" control; auto-open on click would close the panel before those checks.
+$override = @'
+- id: file-explorer
+  config:
+    enabled: true
+    routePath: /api/file-explorer
+    includeHome: true
+    defaultShowHidden: false
+    openInRightPanel: false
+'@
+[IO.File]::WriteAllText((Join-Path $profileDir "cordis.patch.yml"), $override, (New-Object Text.UTF8Encoding($false)))
 
 $outLog = Join-Path $PSScriptRoot "server.log"
 $errLog = Join-Path $PSScriptRoot "server.err.log"

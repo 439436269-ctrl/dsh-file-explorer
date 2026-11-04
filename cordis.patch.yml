@@ -12,3 +12,4 @@
         maxTextBytes: 1048576
         maxRawBytes: 33554432
         defaultShowHidden: false
+        openInRightPanel: true

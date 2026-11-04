@@ -44,6 +44,21 @@ with sync_playwright() as p:
     page.keyboard.press("Escape")
     page.wait_for_timeout(400)
 
+    # The right-sidebar handoff is session-scoped: create one before touching the
+    # explorer so the document preview has a surface to open into.
+    new_session = page.locator("button", has_text="新会话").first
+    session_ready = False
+    if new_session.count() > 0:
+        new_session.click()
+        page.wait_for_timeout(4000)
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(800)
+        session_ready = (
+            page.locator("[data-sidebar-right-session]").count() > 0
+            or page.locator("[data-sidebar-right-open]").count() > 0
+        )
+    print("session surface: " + ("present" if session_ready else "absent"))
+
     step("shell rendered", page.locator("body").inner_text().strip() != "", page.title())
     page.screenshot(path=OUT + r"\01-boot.png")
 
@@ -121,7 +136,14 @@ with sync_playwright() as p:
                 return img ? { w: img.naturalWidth, src: img.getAttribute('src') } : null;
             }"""
         )
-        step("markdown relative image decoded", inline_image is not None and inline_image["w"] > 0, inline_image)
+        if inline_image is None:
+            step("markdown image element present", False, None)
+        elif str(inline_image["src"]).startswith("http"):
+            # The README documents itself with absolute GitHub URLs; whether that
+            # host is reachable is a network property of this machine, not a defect.
+            print("INFO markdown image is external (network-dependent): " + inline_image["src"])
+        else:
+            step("markdown relative image decoded", inline_image["w"] > 0, inline_image)
         page.screenshot(path=OUT + r"\05-markdown.png")
 
         source_toggle = page.locator("[data-fe-root] .fe-crumbs button", has_text="源码").first
@@ -171,6 +193,65 @@ with sync_playwright() as p:
     page.reload(wait_until="domcontentloaded")
     page.wait_for_timeout(5000)
     step("survives reload", page.locator("body").inner_text().strip() != "")
+
+    # The right-panel handoff runs last: the panel hands the file to the
+    # conversation's right column and steps aside, so everything above must
+    # finish while the explorer is still on screen.
+    if session_ready:
+        if page.locator("[data-fe-root]").count() == 0:
+            page.locator("button[aria-label='文件浏览']").first.click(force=True)
+            page.wait_for_timeout(1800)
+        project = page.locator("[data-fe-root] .fe-row", has_text="dsh-file-explorer").first
+        if project.count() > 0 and page.locator("[data-fe-root] .fe-row", has_text="package.json").count() == 0:
+            project.click()
+            page.wait_for_timeout(1400)
+        file_row = page.locator("[data-fe-root] .fe-row", has_text="package.json").first
+        if step("package.json reachable for the handoff", file_row.count() > 0):
+            file_row.click()
+            page.wait_for_timeout(1200)
+            button = page.locator("[data-fe-root] .fe-crumbs button", has_text="在右侧打开").first
+            if step("open-on-the-right control present", button.count() > 0):
+                button.click()
+                page.wait_for_timeout(4000)
+                rightbar = page.evaluate(
+                    """() => {
+                        const owner = document.querySelector('[data-sidebar-right-open]');
+                        const tabs = Array.from(document.querySelectorAll('[data-sidebar-right-tab]'))
+                            .map((el) => (el.textContent || '').trim())
+                            .filter((text) => text !== '');
+                        const preview = document.querySelector('[data-document-preview]');
+                        return {
+                            open: owner !== null,
+                            tabs: tabs.slice(0, 8),
+                            previewKind: preview ? preview.getAttribute('data-document-preview') : null,
+                            hasFileTab: tabs.some((text) => text.includes('package.json')),
+                            explorerGone: document.querySelector('[data-fe-root]') === null,
+                        };
+                    }"""
+                )
+                step(
+                    "file opened in the right document preview",
+                    rightbar["open"] and rightbar["previewKind"] is not None and rightbar["hasFileTab"],
+                    rightbar,
+                )
+                if not rightbar["open"] or rightbar["previewKind"] is None:
+                    debug = page.evaluate(
+                        """() => {
+                            const d = globalThis.__feDebug;
+                            if (!d) return { missing: true };
+                            const out = { explorerGone: document.querySelector('[data-fe-root]') === null };
+                            try { out.target = !!d.ctx.sidebarRight.commandTarget(null); } catch (e) { out.target = 'err:' + e.message; }
+                            out.sessions = document.querySelectorAll('[data-sidebar-right-session]').length;
+                            out.owners = document.querySelectorAll('[data-sidebar-right-open]').length;
+                            out.tabs = Array.from(document.querySelectorAll('[data-sidebar-right-tab]')).length;
+                            return out;
+                        }"""
+                    )
+                    print("DIAG " + json.dumps(debug, ensure_ascii=False, default=str))
+                page.screenshot(path=OUT + r"\07-rightbar.png")
+    else:
+        report.setdefault("skipped", []).append("right panel handoff (no session surface in this profile)")
+        print("SKIP right panel handoff (no session surface)")
 
     browser.close()
 

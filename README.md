@@ -19,11 +19,16 @@
 |---|---|
 | ![](https://raw.githubusercontent.com/439436269-ctrl/dsh-file-explorer/main/docs/image.png) | ![](https://raw.githubusercontent.com/439436269-ctrl/dsh-file-explorer/main/docs/search.png) |
 
+| 点文件直接进右侧栏文档预览 |
+|---|
+| ![](https://raw.githubusercontent.com/439436269-ctrl/dsh-file-explorer/main/docs/right-panel.png) |
+
 ## 它做什么
 
 - **左侧栏入口**：注册在 `sidebar.panellist` 槽位，id 与主面板 key 同为 `file-explorer`，点图标即切到面板。
 - **文件树**：懒加载（展开才列目录）、文件夹优先排序、按后缀着色的类型徽标、隐藏文件开关、目录树宽度可拖。
-- **打开文件**：多 tab、tab 关闭、活动文件高亮、面包屑、状态栏（字节 / 行数 / 是否截断）。
+- **打开文件**：单击文件直接送进**右侧栏的文档预览**（内置渲染器：文本 / Markdown / 图片 / 代码 / PDF / Office），工具栏里就带着系统的「在应用中打开」，也就是"用默认程序打开"。右侧栏属于会话，所以点击后插件面板会让位、会话回来、文件在右边打开；面包屑旁的「在右侧打开」可手动触发同一动作。想留在插件里浏览就把 `openInRightPanel` 设为 `false`。
+- **多 tab**：tab 关闭、活动文件高亮、面包屑、状态栏（字节 / 行数 / 是否截断）。
 - **预览**：
   - 文本：等宽字体 + 行号 + 自动换行开关，单文件默认最多 1 MiB、最多渲染 4000 行；
   - Markdown：标题 / 列表 / 引用 / 代码块 / 链接 / 图片，相对图片走原始字节路由，可一键切回源码；
@@ -77,6 +82,7 @@ dsh plugin --profile desktop add @vfvrpq/dsh-file-explorer@0.1.0
 | `maxTextBytes` | `1048576` | 文本预览上限（超出截断并标注） |
 | `maxRawBytes` | `33554432` | 原始字节路由上限（图片预览） |
 | `defaultShowHidden` | `false` | 文件树初始是否显示点文件 |
+| `openInRightPanel` | `true` | 点文件即送进右侧栏文档预览（右侧栏属会话，插件面板会让位）；设 `false` 则留在面板内预览，右侧仍可用面包屑旁的按钮手动打开 |
 
 ## 权限模型
 

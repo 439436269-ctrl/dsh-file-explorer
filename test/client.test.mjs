@@ -118,6 +118,72 @@ test("apiUrl keeps the configured route and encodes the path", () => {
   );
 });
 
+test("fileResourceAddress mirrors the shipped session address", () => {
+  const client = loadBundle().factory((name) => (name === "react" ? ReactStub : undefined));
+  assert.equal(
+    client.fileResourceAddress("session-1", "D:\\codes\\a b\\x.md"),
+    "dsh-resource://file/session/session-1/D:/codes/a%20b/x.md"
+  );
+  assert.equal(
+    client.fileResourceAddress("s:1", "/home/u/a.md"),
+    "dsh-resource://file/session/s:1//home/u/a.md"
+  );
+});
+
+test("the right-panel bridge degrades instead of throwing", () => {
+  const client = loadBundle().factory((name) => (name === "react" ? ReactStub : undefined));
+
+  const opened = [];
+  const bridge = client.createRightPanelBridge({
+    sidebarRight: {
+      commandTarget: () => ({ sessionId: "s1" }),
+      openResource: (address) => opened.push(address),
+    },
+  });
+  assert.equal(bridge.available, true);
+  assert.equal(bridge.openInRightPanel("D:/a.md"), "opened");
+  assert.deepEqual(opened, ["dsh-resource://file/session/s1/D:/a.md"]);
+
+  // No mounted right column: the bridge returns to the conversation, asks the
+  // layout to reveal the column, and reports `pending` while it retries.
+  let revealed = 0;
+  let selected = 0;
+  const pending = client.createRightPanelBridge({
+    sidebarRight: { commandTarget: () => null, openResource() {} },
+    layout: {
+      selectPanel() {
+        selected += 1;
+      },
+      openRightbar() {
+        revealed += 1;
+      },
+    },
+  });
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = () => 0;
+  try {
+    assert.equal(pending.openInRightPanel("D:/a.md"), "pending");
+  } finally {
+    globalThis.setTimeout = realSetTimeout;
+  }
+  assert.equal(revealed, 1);
+  assert.equal(selected, 1);
+
+  const broken = client.createRightPanelBridge({
+    sidebarRight: {
+      commandTarget: () => ({ sessionId: "s1" }),
+      openResource() {
+        throw new Error("no surface");
+      },
+    },
+  });
+  assert.equal(broken.openInRightPanel("D:/a.md"), "failed");
+
+  const missing = client.createRightPanelBridge({});
+  assert.equal(missing.available, false);
+  assert.equal(missing.openInRightPanel("D:/a.md"), "unavailable");
+});
+
 test("crumbsOf starts at the root name and keeps the filesystem root", () => {
   const client = loadBundle().factory((name) => (name === "react" ? ReactStub : undefined));
   assert.deepEqual(client.crumbsOf("/a/b", "/a/b/c/d.txt"), ["b", "c", "d.txt"]);
