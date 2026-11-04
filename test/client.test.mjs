@@ -220,3 +220,36 @@ test("markdownTarget maps relative assets onto the raw route", () => {
     "/api/file-explorer?op=raw&path=%2Froot%2Fdocs%2Fimg%2Fa.png"
   );
 });
+
+test("a linked badge image renders as a link wrapping the image component", () => {
+  const client = loadBundle().factory((name) => (name === "react" ? ReactStub : undefined));
+  const nodes = client.renderMarkdown("[![npm](https://img/badge.svg)](https://npm.example/pkg)", {
+    routePath: "/api/file-explorer",
+    baseDir: "/root",
+  });
+  const paragraph = nodes[0];
+  assert.equal(paragraph.type, "p");
+  const anchor = paragraph.children[0];
+  assert.equal(anchor.type, "a");
+  assert.equal(anchor.props.href, "https://npm.example/pkg");
+  assert.equal(typeof anchor.children[0].type, "function", "the image must be rendered by the fallback component");
+  assert.equal(anchor.children[0].props.src, "https://img/badge.svg");
+});
+
+test("a GitHub-style table renders a header and body cells", () => {
+  const client = loadBundle().factory((name) => (name === "react" ? ReactStub : undefined));
+  const nodes = client.renderMarkdown("| 列 A | 列 B |\n|---|---|\n| 1 | 2 |\n| 3 | **4** |\n", {
+    routePath: "/api/file-explorer",
+    baseDir: "/root",
+  });
+  assert.equal(nodes.length, 1);
+  assert.equal(nodes[0].type, "div");
+  assert.equal(nodes[0].props.className, "fe-md-table");
+  const table = nodes[0].children[0];
+  assert.equal(table.type, "table");
+  const thead = table.children[0];
+  const tbody = table.children[1];
+  assert.equal(thead.children[0].children.length, 2);
+  assert.equal(tbody.children.length, 2);
+  assert.equal(tbody.children[0].children[0].children[0], "1");
+});

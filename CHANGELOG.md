@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 — 2026-11-04
+
+Interface pass on the explorer panel:
+
+- The preview is now its **own bordered card** (rounded, inset, tab strip + toolbar inside), so the tree and the document read as two surfaces instead of one flat page.
+- Every document action collapsed into an **icon toolbar** with `title` and `aria-label` (wrap, Markdown source toggle, copy path, open on the right, open with the default app) — no more text buttons crowding the breadcrumb row.
+- **Expanded folders are remembered per root**, so a reload (or switching roots and back) keeps the tree where it was. Capped at 400 paths per root.
+- The active tree row gets a left accent bar.
+- Markdown: linked badge images (`[![alt](src)](href)`) now render as links wrapping the image, and an image that fails to load degrades to its alt text instead of a broken-image icon.
+
 ## 0.1.4 — 2026-11-04
 
 - **Clicking a file no longer leaves the explorer.** `openInRightPanel` now defaults to `false`: the click opens the preview inside the panel (tree on the left, preview on the right) and nothing navigates away.

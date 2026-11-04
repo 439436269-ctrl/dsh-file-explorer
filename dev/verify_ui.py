@@ -160,7 +160,7 @@ with sync_playwright() as p:
         step("open endpoint rejects GET", open_guard["get"] == 405, open_guard["get"])
         step(
             "open-with-default-app control present",
-            page.locator("[data-fe-root] .fe-crumbs button", has_text="用默认程序打开").count() > 0,
+            page.locator("[data-fe-root] .fe-crumbs button[aria-label='用默认程序打开']").count() > 0,
         )
 
     # Markdown preview.
@@ -241,6 +241,11 @@ with sync_playwright() as p:
         if page.locator("[data-fe-root]").count() == 0:
             page.locator("button[aria-label='文件浏览']").first.click(force=True)
             page.wait_for_timeout(1800)
+        # The project folder was expanded before the reload; it must still be open.
+        step(
+            "expanded folders survive a reload",
+            page.locator("[data-fe-root] .fe-row", has_text="package.json").count() > 0,
+        )
         project = page.locator("[data-fe-root] .fe-row", has_text="dsh-file-explorer").first
         if project.count() > 0 and page.locator("[data-fe-root] .fe-row", has_text="package.json").count() == 0:
             project.click()
@@ -249,7 +254,7 @@ with sync_playwright() as p:
         if step("package.json reachable for the handoff", file_row.count() > 0):
             file_row.click()
             page.wait_for_timeout(1200)
-            button = page.locator("[data-fe-root] .fe-crumbs button", has_text="在右侧打开").first
+            button = page.locator("[data-fe-root] .fe-crumbs button[aria-label='在右侧打开']")
             if step("open-on-the-right control present", button.count() > 0):
                 button.click()
                 page.wait_for_timeout(4000)
