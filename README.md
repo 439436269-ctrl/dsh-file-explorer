@@ -112,6 +112,9 @@ node --test test\host.test.mjs test\client.test.mjs
 
 # 端到端：建临时 profile → 装包 → 起无头 Web → Playwright 断言 17 项 → 拆掉
 powershell -NoProfile -ExecutionPolicy Bypass -File dev\verify-local.ps1
+
+# 验证的是 registry 装下来的产物而不是源码目录（第一次就靠这条抓到 patch 里残留旧包名）
+powershell -NoProfile -ExecutionPolicy Bypass -File dev\verify-local.ps1 -PackageDir "$env:USERPROFILE\.dsh\profiles\desktop\node_modules\@vfvrpq\dsh-file-explorer"
 ```
 
 端到端脚本会验证：侧栏图标存在、面板挂载、树懒加载、`roots` 接口、文本预览内容与行号、Markdown 渲染与源码切换、Markdown 相对图片真的解码（读 `naturalWidth`）、图片预览解码、状态栏跟随活动文件、搜索命中、刷新后仍可用。截图落在 `dev/`，可复制到 `docs/`。

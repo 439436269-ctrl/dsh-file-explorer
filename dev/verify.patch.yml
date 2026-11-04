@@ -1,7 +1,9 @@
-# Scratch overlay used to verify the plugin in a throwaway profile.
+# Optional overlay for manual scratch-profile runs. The automated path
+# (dev/verify-local.ps1) installs the package as a bundle instead, which is what
+# a real `dsh plugin add` does; keep this file only if you want the overlay way.
 - insert:
     - id: file-explorer
-      name: dsh-file-explorer
+      name: "@vfvrpq/dsh-file-explorer"
       config:
         enabled: true
         routePath: /api/file-explorer

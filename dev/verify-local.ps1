@@ -9,11 +9,16 @@
 #
 param(
     [string]$Profile = "fe-verify",
+    [string]$PackageDir = "",
     [switch]$KeepProfile
 )
 
 $ErrorActionPreference = "Stop"
 $packageRoot = Split-Path -Parent $PSScriptRoot
+$source = if ($PackageDir -ne "") { $PackageDir } else { $packageRoot }
+$manifest = Get-Content (Join-Path $source "package.json") -Raw | ConvertFrom-Json
+$packageName = $manifest.name
+$packageVersion = $manifest.version
 $profileDir = Join-Path (Join-Path $env:USERPROFILE ".dsh\profiles") $Profile
 $python = if ($env:PYTHON) { $env:PYTHON } else { "python" }
 
@@ -24,24 +29,31 @@ if (-not (Test-Path $profileDir)) {
 
 $nodeModules = Join-Path $profileDir "node_modules"
 New-Item -ItemType Directory -Path $nodeModules -Force | Out-Null
-$installed = Join-Path $nodeModules "dsh-file-explorer"
+$installed = Join-Path $nodeModules $packageName
+New-Item -ItemType Directory -Path (Split-Path $installed -Parent) -Force | Out-Null
 if (Test-Path $installed) { Remove-Item $installed -Recurse -Force }
 New-Item -ItemType Directory -Path $installed | Out-Null
-Copy-Item (Join-Path $packageRoot "lib") -Destination (Join-Path $installed "lib") -Recurse
-Copy-Item (Join-Path $packageRoot "package.json"), (Join-Path $packageRoot "cordis.patch.yml") -Destination $installed
+Copy-Item (Join-Path $source "lib") -Destination (Join-Path $installed "lib") -Recurse
+Copy-Item (Join-Path $source "package.json"), (Join-Path $source "cordis.patch.yml") -Destination $installed
 
-# The profile must list the package so the client-bundle scan sees `dsh.client`.
-# Written without a BOM: the loader parses this file as JSON.
+# The profile must list the package so the client-bundle scan sees `dsh.client`,
+# and as a bundle so its own cordis.patch.yml supplies the insert row 鈥?exactly
+# what `dsh plugin --profile <p> add <pkg>` does. Written without a BOM: the
+# loader parses this file as JSON.
 $manifestPath = Join-Path $profileDir "package.json"
-$manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-$manifest.dependencies | Add-Member -NotePropertyName "dsh-file-explorer" -NotePropertyValue "0.1.0" -Force
-[IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding($false)))
+$profileManifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+$profileManifest.dependencies | Add-Member -NotePropertyName $packageName -NotePropertyValue $packageVersion -Force
+$bundles = @($profileManifest.dsh.profile.bundles)
+if ($bundles -notcontains $packageName) {
+    $profileManifest.dsh.profile.bundles = @($bundles + $packageName)
+}
+[IO.File]::WriteAllText($manifestPath, ($profileManifest | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding($false)))
 
 $outLog = Join-Path $PSScriptRoot "server.log"
 $errLog = Join-Path $PSScriptRoot "server.err.log"
 Remove-Item $outLog, $errLog -ErrorAction SilentlyContinue
 
-$serverCommand = "dsh --profile $Profile --patch `"$(Join-Path $PSScriptRoot 'verify.patch.yml')`" --no-open --port 0"
+$serverCommand = "dsh --profile $Profile --no-open --port 0"
 $server = Start-Process -FilePath "powershell" -ArgumentList @("-NoProfile", "-Command", $serverCommand) `
     -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru -WindowStyle Hidden
 
