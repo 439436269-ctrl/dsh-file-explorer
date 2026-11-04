@@ -121,6 +121,12 @@ with sync_playwright() as p:
         code = page.eval_on_selector("[data-fe-root] .fe-code", "el => el.innerText") if page.locator("[data-fe-root] .fe-code").count() else ""
         step("text preview shows content", '"name": "@vfvrpq/dsh-file-explorer"' in code, code[:160])
         step("line numbers present", page.locator("[data-fe-root] .fe-ln").count() > 3, page.locator("[data-fe-root] .fe-ln").count())
+        # The whole point of the 0.1.4 default: the click must not navigate away.
+        step(
+            "clicking a file keeps the explorer mounted",
+            page.locator("[data-fe-root]").count() == 1,
+            page.locator("[data-fe-root]").count(),
+        )
         page.screenshot(path=OUT + r"\04-file-text.png")
 
         # "Open with the default app": GET must be refused, executable suffixes

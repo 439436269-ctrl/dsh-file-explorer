@@ -27,7 +27,8 @@
 
 - **左侧栏入口**：注册在 `sidebar.panellist` 槽位，id 与主面板 key 同为 `file-explorer`，点图标即切到面板。
 - **文件树**：懒加载（展开才列目录）、文件夹优先排序、按后缀着色的类型徽标、隐藏文件开关、目录树宽度可拖。
-- **打开文件**：单击文件直接送进**右侧栏的文档预览**（内置渲染器：文本 / Markdown / 图片 / 代码 / PDF / Office），工具栏里就带着系统的「在应用中打开」。右侧栏属于会话，所以点击后插件面板会让位、会话回来、文件在右边打开；面包屑旁的「在右侧打开」可手动触发同一动作。想留在插件里浏览就把 `openInRightPanel` 设为 `false`。
+- **打开文件**：单击文件就在**面板内**预览——左边树、右边预览框，不跳走。预览框有 tab、面包屑、行号/图片/渲染后的 Markdown，状态栏显示字节、行数、是否截断。
+- **交给右侧栏（可选）**：面包屑旁的「在右侧打开」把当前文件送进会话的右侧文档预览（内置渲染器：代码/PDF/Office…）。注意右侧栏属于会话，所以这个动作会让会话回来、面板让位；想每次点文件都这样做，把 `openInRightPanel` 设为 `true`。
 - **用默认程序打开**：面包屑旁与**右侧文档工具栏**各有一个按钮，`POST` 到认证路由 `?op=open`，把当前文件交给系统默认程序（Windows `start` / macOS `open` / Linux `xdg-open`）。可执行后缀（exe/bat/cmd/ps1…）默认拒绝，`GET` 一律 405，避免预取或误点直接跑程序。
 - **多 tab**：tab 关闭、活动文件高亮、面包屑、状态栏（字节 / 行数 / 是否截断）。
 - **预览**：
@@ -83,7 +84,7 @@ dsh plugin --profile desktop add @vfvrpq/dsh-file-explorer@0.1.0
 | `maxTextBytes` | `1048576` | 文本预览上限（超出截断并标注） |
 | `maxRawBytes` | `33554432` | 原始字节路由上限（图片预览） |
 | `defaultShowHidden` | `false` | 文件树初始是否显示点文件 |
-| `openInRightPanel` | `true` | 点文件即送进右侧栏文档预览（右侧栏属会话，插件面板会让位）；设 `false` 则留在面板内预览，右侧仍可用面包屑旁的按钮手动打开 |
+| `openInRightPanel` | `false` | 设为 `true` 时，点文件改为送进右侧栏文档预览（右侧栏属会话，面板会让位）；默认留在面板内预览 |
 | `allowOpenWithDefaultApp` | `true` | 是否显示「用默认程序打开」按钮；关掉后 `?op=open` 直接 403 |
 | `blockedOpenExtensions` | `exe,com,bat,cmd,msi,scr,pif,vbs,vbe,ps1,reg,sh,command,app,desktop` | 启动器拒绝交给系统处理的后缀（这些交给 shell 会变成"执行"）；设空数组表示不拦 |
 

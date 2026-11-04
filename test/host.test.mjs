@@ -39,10 +39,13 @@ test("resolveConfig caps text at the raw limit and normalizes lists", () => {
 test("resolveConfig normalizes the open-with-default-app settings", () => {
   const defaults = resolveConfig({});
   assert.equal(defaults.allowOpenWithDefaultApp, true);
+  // Clicking a file must stay in the explorer unless the operator opts in.
+  assert.equal(defaults.openInRightPanel, false);
   assert.deepEqual(defaults.blockedOpenExtensions, DEFAULT_BLOCKED_EXTENSIONS);
   assert.deepEqual(resolveConfig({ blockedOpenExtensions: [".EXE", "bat", "exe"] }).blockedOpenExtensions, ["exe", "bat"]);
   assert.deepEqual(resolveConfig({ blockedOpenExtensions: [] }).blockedOpenExtensions, []);
   assert.equal(resolveConfig({ allowOpenWithDefaultApp: false }).allowOpenWithDefaultApp, false);
+  assert.equal(resolveConfig({ openInRightPanel: true }).openInRightPanel, true);
 });
 
 /* ------------------------------------------------------------------ */

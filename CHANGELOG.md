@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 — 2026-11-04
+
+- **Clicking a file no longer leaves the explorer.** `openInRightPanel` now defaults to `false`: the click opens the preview inside the panel (tree on the left, preview on the right) and nothing navigates away.
+- Why the old default changed: the right column belongs to the conversation surface, so handing a file to it necessarily replaces the explorer with the conversation. That is only worth it on purpose, so it stays a one-click opt-in via「在右侧打开」or `openInRightPanel: true`.
+
 ## 0.1.3 — 2026-11-04
 
 - The **"用默认程序打开"** control also lands in the right panel's document toolbar (`sidebar.right.tab.document.actions`), which receives the previewed file's Host `absolutePath`. This is what makes the button reachable in the default flow, where clicking a file hands it to the right column and the explorer steps aside.

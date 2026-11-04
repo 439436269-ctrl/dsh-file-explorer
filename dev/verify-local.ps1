@@ -50,8 +50,9 @@ if ($bundles -notcontains $packageName) {
 }
 [IO.File]::WriteAllText($manifestPath, ($profileManifest | ConvertTo-Json -Depth 10), (New-Object Text.UTF8Encoding($false)))
 
-# The suite drives the in-panel preview first and then the explicit "open on the
-# right" control; auto-open on click would close the panel before those checks.
+# The suite runs with the shipped defaults: clicking a file must stay inside the
+# explorer (the pre-0.1.4 default handed every click to the right column, which
+# replaces this panel with the conversation).
 $override = @'
 - id: file-explorer
   config:
@@ -59,7 +60,6 @@ $override = @'
     routePath: /api/file-explorer
     includeHome: true
     defaultShowHidden: false
-    openInRightPanel: false
 '@
 [IO.File]::WriteAllText((Join-Path $profileDir "cordis.patch.yml"), $override, (New-Object Text.UTF8Encoding($false)))
 
