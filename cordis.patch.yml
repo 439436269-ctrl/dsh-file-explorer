@@ -1,0 +1,14 @@
+# Bundle patch: one row inserts the plugin into a profile's plugin tree.
+# The entry id doubles as the settings-page namespace.
+- insert:
+    - id: file-explorer
+      name: "@vfvrpq/dsh-file-explorer"
+      config:
+        enabled: true
+        routePath: /api/file-explorer
+        extraRoots: []
+        includeHome: true
+        ignored: []
+        maxTextBytes: 1048576
+        maxRawBytes: 33554432
+        defaultShowHidden: false
