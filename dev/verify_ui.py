@@ -268,6 +268,20 @@ with sync_playwright() as p:
                     rightbar["open"] and rightbar["previewKind"] is not None and rightbar["hasFileTab"],
                     rightbar,
                 )
+                toolbar = page.evaluate(
+                    """() => {
+                        const buttons = Array.from(document.querySelectorAll('[data-fe-doc-action]'));
+                        return {
+                            count: buttons.length,
+                            labels: buttons.map((b) => (b.textContent || '').trim()),
+                        };
+                    }"""
+                )
+                step(
+                    "open-with-default-app control in the document toolbar",
+                    toolbar["count"] > 0 and any("用默认程序打开" in label for label in toolbar["labels"]),
+                    toolbar,
+                )
                 if not rightbar["open"] or rightbar["previewKind"] is None:
                     debug = page.evaluate(
                         """() => {

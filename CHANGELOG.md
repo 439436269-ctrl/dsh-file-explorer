@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 — 2026-11-04
+
+- The **"用默认程序打开"** control also lands in the right panel's document toolbar (`sidebar.right.tab.document.actions`), which receives the previewed file's Host `absolutePath`. This is what makes the button reachable in the default flow, where clicking a file hands it to the right column and the explorer steps aside.
+- Both copies share one launcher (`postOpen`), so guards, errors and the success notice behave identically.
+
 ## 0.1.2 — 2026-11-04
 
 - New **"用默认程序打开"** control in the breadcrumb row. It `POST`s to the authenticated `?op=open` route, which resolves the file, refuses executable suffixes by default, and hands the path to the platform opener (`start` / `open` / `xdg-open`).

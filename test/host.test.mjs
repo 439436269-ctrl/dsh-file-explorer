@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { DEFAULTS, resolveConfig } from "../lib/config.js";
 import { countLines, extensionOf, looksBinary, mimeOf, readDocument, searchFiles, listDirectory } from "../lib/files.js";
-import { DEFAULT_BLOCKED_EXTENSIONS, isBlockedExtension, openCommandFor } from "../lib/open.js";
+import { DEFAULT_BLOCKED_EXTENSIONS, isBlockedExtension, openCommandFor, spawnDetached } from "../lib/open.js";
 import { joinDisplay } from "../lib/roots.js";
 
 /* ------------------------------------------------------------------ */
@@ -63,6 +63,14 @@ test("executable suffixes are refused by default", () => {
   assert.equal(isBlockedExtension("exe", []), false);
   assert.ok(DEFAULT_BLOCKED_EXTENSIONS.includes("bat"));
   assert.ok(DEFAULT_BLOCKED_EXTENSIONS.includes("ps1"));
+});
+
+test("spawnDetached really starts a detached child", () => {
+  // A window-less, immediately exiting command: this exercises the exact spawn
+  // path the open route uses without launching a GUI application.
+  const command = process.platform === "win32" ? "cmd.exe" : "sh";
+  const args = process.platform === "win32" ? ["/c", "exit", "0"] : ["-c", "exit 0"];
+  assert.equal(spawnDetached(command, args), true);
 });
 
 /* ------------------------------------------------------------------ */
