@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 — 2026-11-04
+
+- New **"用默认程序打开"** control in the breadcrumb row. It `POST`s to the authenticated `?op=open` route, which resolves the file, refuses executable suffixes by default, and hands the path to the platform opener (`start` / `open` / `xdg-open`).
+- `?op=open&probe=1` answers the exact command that would run without spawning it, so the verification suite can prove the wiring without opening a window.
+- New `allowOpenWithDefaultApp` and `blockedOpenExtensions` config; `GET` on the open operation is refused (405) so a prefetch can never launch a program.
+
 ## 0.1.1 — 2026-11-04
 
 - Clicking a file now opens it in the **right-sidebar document preview** with the built-in renderer for that type (text, Markdown, image, code, PDF, Office…). The right column belongs to the conversation, so the explorer steps aside and the conversation returns with the document open next to it.

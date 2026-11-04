@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { DEFAULTS, resolveConfig } from "../lib/config.js";
 import { countLines, extensionOf, looksBinary, mimeOf, readDocument, searchFiles, listDirectory } from "../lib/files.js";
+import { DEFAULT_BLOCKED_EXTENSIONS, isBlockedExtension, openCommandFor } from "../lib/open.js";
 import { joinDisplay } from "../lib/roots.js";
 
 /* ------------------------------------------------------------------ */
@@ -33,6 +34,35 @@ test("resolveConfig caps text at the raw limit and normalizes lists", () => {
   assert.equal(settings.maxTextBytes, 1024);
   assert.deepEqual(settings.ignored, ["node_modules"]);
   assert.deepEqual(resolveConfig({ extraRoots: [" /tmp ", "/tmp", 42] }).extraRoots, ["/tmp"]);
+});
+
+test("resolveConfig normalizes the open-with-default-app settings", () => {
+  const defaults = resolveConfig({});
+  assert.equal(defaults.allowOpenWithDefaultApp, true);
+  assert.deepEqual(defaults.blockedOpenExtensions, DEFAULT_BLOCKED_EXTENSIONS);
+  assert.deepEqual(resolveConfig({ blockedOpenExtensions: [".EXE", "bat", "exe"] }).blockedOpenExtensions, ["exe", "bat"]);
+  assert.deepEqual(resolveConfig({ blockedOpenExtensions: [] }).blockedOpenExtensions, []);
+  assert.equal(resolveConfig({ allowOpenWithDefaultApp: false }).allowOpenWithDefaultApp, false);
+});
+
+/* ------------------------------------------------------------------ */
+/* open with the default application                                   */
+/* ------------------------------------------------------------------ */
+
+test("openCommandFor picks the platform opener without quoting bugs", () => {
+  const win = openCommandFor("C:\\a b\\x.txt", "win32");
+  assert.equal(win.command, process.env.ComSpec || "cmd.exe");
+  assert.deepEqual(win.args, ["/c", "start", "", "C:\\a b\\x.txt"]);
+  assert.deepEqual(openCommandFor("/a/x.txt", "darwin"), { command: "open", args: ["/a/x.txt"] });
+  assert.deepEqual(openCommandFor("/a/x.txt", "linux"), { command: "xdg-open", args: ["/a/x.txt"] });
+});
+
+test("executable suffixes are refused by default", () => {
+  assert.equal(isBlockedExtension("exe"), true);
+  assert.equal(isBlockedExtension("TXT"), false);
+  assert.equal(isBlockedExtension("exe", []), false);
+  assert.ok(DEFAULT_BLOCKED_EXTENSIONS.includes("bat"));
+  assert.ok(DEFAULT_BLOCKED_EXTENSIONS.includes("ps1"));
 });
 
 /* ------------------------------------------------------------------ */

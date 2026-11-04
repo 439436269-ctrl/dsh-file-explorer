@@ -123,6 +123,40 @@ with sync_playwright() as p:
         step("line numbers present", page.locator("[data-fe-root] .fe-ln").count() > 3, page.locator("[data-fe-root] .fe-ln").count())
         page.screenshot(path=OUT + r"\04-file-text.png")
 
+        # "Open with the default app": GET must be refused, executable suffixes
+        # must be refused, and probe=1 answers the exact platform command without
+        # launching anything on the build machine.
+        active_path = page.eval_on_selector("[data-fe-root] .fe-status-path", "el => el.textContent")
+        open_guard = page.evaluate(
+            """async (activePath) => {
+                const enc = encodeURIComponent;
+                const base = '/api/file-explorer?op=open';
+                const exePath = activePath.replace('package.json', 'dev/verify-local.ps1');
+                const exe = await fetch(base + '&path=' + enc(exePath), { method: 'POST' });
+                const exeBody = await exe.json();
+                const probe = await fetch(base + '&probe=1&path=' + enc(activePath), { method: 'POST' });
+                const probeBody = await probe.json();
+                const get = await fetch(base + '&path=' + enc(activePath));
+                return { exe: [exe.status, exeBody], probe: [probe.status, probeBody], get: get.status };
+            }""",
+            active_path,
+        )
+        step(
+            "open endpoint refuses an executable suffix",
+            open_guard["exe"][0] == 400 and open_guard["exe"][1].get("code") == "OPEN_BLOCKED",
+            open_guard["exe"],
+        )
+        step(
+            "open endpoint resolves the platform command",
+            open_guard["probe"][0] == 200 and bool(open_guard["probe"][1].get("command")),
+            open_guard["probe"][1],
+        )
+        step("open endpoint rejects GET", open_guard["get"] == 405, open_guard["get"])
+        step(
+            "open-with-default-app control present",
+            page.locator("[data-fe-root] .fe-crumbs button", has_text="用默认程序打开").count() > 0,
+        )
+
     # Markdown preview.
     readme = page.locator("[data-fe-root] .fe-row", has_text="README.md").first
     if step("README.md reachable", readme.count() > 0):

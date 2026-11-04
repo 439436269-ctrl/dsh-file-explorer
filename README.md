@@ -27,7 +27,8 @@
 
 - **左侧栏入口**：注册在 `sidebar.panellist` 槽位，id 与主面板 key 同为 `file-explorer`，点图标即切到面板。
 - **文件树**：懒加载（展开才列目录）、文件夹优先排序、按后缀着色的类型徽标、隐藏文件开关、目录树宽度可拖。
-- **打开文件**：单击文件直接送进**右侧栏的文档预览**（内置渲染器：文本 / Markdown / 图片 / 代码 / PDF / Office），工具栏里就带着系统的「在应用中打开」，也就是"用默认程序打开"。右侧栏属于会话，所以点击后插件面板会让位、会话回来、文件在右边打开；面包屑旁的「在右侧打开」可手动触发同一动作。想留在插件里浏览就把 `openInRightPanel` 设为 `false`。
+- **打开文件**：单击文件直接送进**右侧栏的文档预览**（内置渲染器：文本 / Markdown / 图片 / 代码 / PDF / Office），工具栏里就带着系统的「在应用中打开」。右侧栏属于会话，所以点击后插件面板会让位、会话回来、文件在右边打开；面包屑旁的「在右侧打开」可手动触发同一动作。想留在插件里浏览就把 `openInRightPanel` 设为 `false`。
+- **用默认程序打开**：面包屑旁的按钮 `POST` 到认证路由 `?op=open`，把当前文件交给系统默认程序（Windows `start` / macOS `open` / Linux `xdg-open`）。可执行后缀（exe/bat/cmd/ps1…）默认拒绝，`GET` 一律 405，避免预取或误点直接跑程序。
 - **多 tab**：tab 关闭、活动文件高亮、面包屑、状态栏（字节 / 行数 / 是否截断）。
 - **预览**：
   - 文本：等宽字体 + 行号 + 自动换行开关，单文件默认最多 1 MiB、最多渲染 4000 行；
@@ -83,6 +84,8 @@ dsh plugin --profile desktop add @vfvrpq/dsh-file-explorer@0.1.0
 | `maxRawBytes` | `33554432` | 原始字节路由上限（图片预览） |
 | `defaultShowHidden` | `false` | 文件树初始是否显示点文件 |
 | `openInRightPanel` | `true` | 点文件即送进右侧栏文档预览（右侧栏属会话，插件面板会让位）；设 `false` 则留在面板内预览，右侧仍可用面包屑旁的按钮手动打开 |
+| `allowOpenWithDefaultApp` | `true` | 是否显示「用默认程序打开」按钮；关掉后 `?op=open` 直接 403 |
+| `blockedOpenExtensions` | `exe,com,bat,cmd,msi,scr,pif,vbs,vbe,ps1,reg,sh,command,app,desktop` | 启动器拒绝交给系统处理的后缀（这些交给 shell 会变成"执行"）；设空数组表示不拦 |
 
 ## 权限模型
 
@@ -91,7 +94,8 @@ dsh plugin --profile desktop add @vfvrpq/dsh-file-explorer@0.1.0
 1. 可浏览的根 = 已注册工作区 + 默认工作目录 + 进程目录 + 主目录 + `extraRoots`，去重后只保留真实存在的目录；
 2. 每次请求的 `path` 都会用 `ctx.fs.resolve` 解析成稳定 target，再用 `ctx.fs.contains(root, target)` 证明它落在某个根内，否则 403；
 3. 路由挂在 `/api/` 下，继承连接层的 Host/Origin 校验与会话 cookie 鉴权；
-4. 原始字节路由只对图片类型内联（带 `nosniff` + `CSP sandbox`），其它一律按附件下发，避免同源 HTML/SVG 被执行。
+4. 原始字节路由只对图片类型内联（带 `nosniff` + `CSP sandbox`），其它一律按附件下发，避免同源 HTML/SVG 被执行；
+5. `?op=open` 只接受 `POST`（`GET` 一律 405），只接受普通文件且拒绝可执行后缀，启动命令由平台决定（`start "" <path>` / `open` / `xdg-open`），不拼接 shell 字符串。
 
 ## 目录结构
 
@@ -101,7 +105,7 @@ lib/config.js   默认值与归一化（可脱离宿主单测）
 lib/schema.js   schemastery 配置（设置页用）
 lib/roots.js    根目录候选、解析、去重、路径围栏
 lib/files.js    列目录、读预览、递归搜索（全部走 ctx.fs）
-lib/route.js    GET /api/file-explorer?op=roots|list|read|search|raw
+lib/route.js    /api/file-explorer?op=roots|list|read|search|raw|open（open 仅 POST）
 lib/client.js   浏览器半：侧栏图标 + 主面板（无构建，手写 ModuleLoader bundle）
 test/           宿主单测 + 客户端 bundle 的结构断言
 docs/           验证截图
