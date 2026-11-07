@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — 2026-11-07
+
+Compatibility release, no behavior change:
+
+- `dsh.compatibility.dshReleases` now also declares `0.2.1-rc.2` and `0.2.2-rc.1`, so the compatibility gate stops flagging it on newer Harness builds.
+- Every other file is byte-identical to 0.2.0.
+
 ## 0.2.0 — 2026-11-04
 
 Interface pass on the explorer panel:

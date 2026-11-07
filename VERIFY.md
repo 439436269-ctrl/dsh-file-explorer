@@ -1,5 +1,14 @@
 # 发布与验证记录
 
+## 0.2.1（2026-11-07）
+
+| 项 | 值 |
+|---|---|
+| npm | `@vfvrpq/dsh-file-explorer@0.2.1`（latest，2026-11-07T00:44:48Z），gitHead `f3f8c2a` |
+| 变更 | `dsh.compatibility.dshReleases` 增加 `0.2.1-rc.2` / `0.2.2-rc.1`；其余文件与 0.2.0 逐字节相同（已用 tarball 逐文件 sha256 核对） |
+| GitHub | tag `v0.2.1` |
+| 市场条目 | 描述更新 PR **#13003**：zh 描述改为以「侧栏文件浏览器与文件预览器」开头（原来只有「浏览工作区/文件树」，中文搜「文件浏览」「文件预览」命中不了）；en 补 "file previewer" 与 Markdown 表格 |
+
 ## 0.2.0（2026-11-05）
 
 | 项 | 值 |
@@ -25,6 +34,7 @@
 | 0.1.3 | 文档工具栏同名动作（`sidebar.right.tab.document.actions`，拿 `absolutePath`） |
 | 0.1.4 | 默认改为**留在面板内预览**（`openInRightPanel: false`） |
 | 0.2.0 | 预览卡片化、图标工具栏、记住展开目录、Markdown 表格/徽章/图片占位 |
+| 0.2.1 | 兼容性声明补 `0.2.1-rc.2` / `0.2.2-rc.1`，无行为变化 |
 
 ## 稳定性备注
 
